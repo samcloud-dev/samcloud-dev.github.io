@@ -87,11 +87,22 @@
     </div>
 
     <div class="card">
+      <span class="status done">Bootcamp build — submitted</span>
+      <h3>AWS Self-Healing Web Tier — ALB + Auto Scaling</h3>
+      <p>A self-healing web tier built in AWS: Launch Template (Amazon Linux 2023, IMDSv2, Bash
+      user-data running Apache with a /health endpoint), a target group health-checking /health, an
+      internet-facing Application Load Balancer, and an Auto Scaling Group (1–3 instances) — proved
+      by marking an instance unhealthy and watching the ASG replace it, then torn down completely.</p>
+      <span class="tag">AWS</span><span class="tag">ALB</span><span class="tag">Auto Scaling</span><span class="tag">EC2</span>
+    </div>
+
+    <div class="card">
       <span class="status prog">In progress</span>
       <h3><a href="https://github.com/samcloud-dev/freshtrack" target="_blank" rel="noopener">FreshTrack</a></h3>
       <p>A household food expiry tracker (Flask API) with a hardened Docker image — digest-pinned base,
       non-root user, hash-locked dependencies — and a CI pipeline that builds, boots, health-checks and
-      Trivy-scans the image. Latest verified run: green, 0 vulnerabilities. Registry publish is next.</p>
+      Trivy-scans the image. Latest verified run: green, 0 vulnerabilities. Image published to
+      Docker Hub; deployment onto the Terraform platform is next.</p>
       <span class="tag">Docker</span><span class="tag">GitHub Actions</span><span class="tag">Trivy</span><span class="tag">Python</span>
     </div>
 
@@ -113,6 +124,16 @@
       journeys, 0 crashes, 0 freezes, 0 login failures — with 14 findings (3 P1 candidates) that I
       converted into 5 follow-up engineering tasks.</p>
       <span class="tag">Software testing</span><span class="tag">Test reporting</span><span class="tag">iOS &amp; Android</span><span class="tag">Root-cause analysis</span>
+    </div>
+
+    <div class="card">
+      <span class="status done">Delivered — freelance</span>
+      <h3>First Upwork Contract — iOS App Test</h3>
+      <p>End-to-end test of a UK visa-services iOS app for an Upwork client: eligibility checks,
+      a full application with document uploads, test payment, application tracking, FAQs and support.
+      Delivered an issue spreadsheet and written report with 8 evidence-backed findings — including
+      a tracking-screen hang reproduced and timed on a real iPhone.</p>
+      <span class="tag">iOS testing</span><span class="tag">Upwork</span><span class="tag">Test reporting</span><span class="tag">Freelance</span>
     </div>
 
     <div class="card">
