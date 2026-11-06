@@ -339,21 +339,6 @@ footer { color: var(--muted); font-size: 0.88rem; display: grid; gap: 6px; borde
     </ul>
   </section>
 
-  <section aria-labelledby="fix-h">
-    <div class="section-head">
-      <div class="eyebrow">Troubleshooting</div>
-      <h2 id="fix-h">Problems I hit and how I solved them</h2>
-    </div>
-    <div class="grid-3">
-      <div class="card"><div class="sym">Error acquiring the state lock</div><p class="fix">An interrupted run had left the lock behind. I checked for running Terraform processes and the S3 lock file before forcing anything; it had already been released.</p><p class="lesson">Never force-unlock an apply that might still be running.</p></div>
-      <div class="card"><div class="sym">Missing Dependency: botocore[crt]</div><p class="fix">My short-lived AWS login uses a newer credential type. Added the CRT extra to Ansible's own Python environment.</p><p class="lesson">The error message usually names the fix.</p></div>
-      <div class="card"><div class="sym">apt: No such file or directory</div><p class="fix">The server runs Amazon Linux, which uses dnf. Switched to Ansible's generic package module so one playbook works on Ubuntu and Amazon Linux.</p><p class="lesson">Write portable playbooks; don't assume the OS.</p></div>
-      <div class="card"><div class="sym">Plan said "3 to add", expected 19</div><p class="fix">Listed what would be created instead of trusting the summary: 19 resources. The 3 came from an older run still on screen.</p><p class="lesson">Question any count you didn't predict.</p></div>
-      <div class="card"><div class="sym">versions.tf committed empty</div><p class="fix">terraform validate passed because an empty file is valid. Caught it reviewing the pull request diff and pushed the fix.</p><p class="lesson">Valid doesn't mean correct.</p></div>
-      <div class="card"><div class="sym">git push → 403</div><p class="fix">The remote used HTTPS with an old token. Switched the remote to SSH.</p><p class="lesson">403 is about who you are; 404 is about what you asked for.</p></div>
-    </div>
-  </section>
-
   <section aria-labelledby="cost-h">
     <div class="section-head">
       <div class="eyebrow">Cost</div>
