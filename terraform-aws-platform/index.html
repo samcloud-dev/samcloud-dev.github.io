@@ -1,0 +1,610 @@
+<title>FreshTrack AWS Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a control-room page. Hero thesis, then the working machine (diagram + console), then the build log, then the evidence. */
+:root {
+  --paper: #edf1f5;
+  --panel: #ffffff;
+  --ink: #142030;
+  --muted: #586678;
+  --line: #c8d2dd;
+  --accent: #c8611b;
+  --accent-soft: #f6e3d4;
+  --cloud: #2a62a6;
+  --cloud-soft: #dde8f5;
+  --ok: #24804f;
+  --ok-soft: #d9efe2;
+  --bad: #b8392f;
+  --bad-soft: #f6dcd9;
+  --console: #101a26;
+  --console-ink: #d7e2ee;
+  --console-dim: #7f91a6;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0e151e; --panel: #152030; --ink: #e5ecf3; --muted: #93a3b6; --line: #2b394b;
+    --accent: #f0904a; --accent-soft: #3a2616; --cloud: #73a9e6; --cloud-soft: #172a40;
+    --ok: #57c48a; --ok-soft: #14301f; --bad: #ef6b5f; --bad-soft: #3a1a17;
+    --console: #070c12; --console-ink: #d7e2ee; --console-dim: #7f91a6;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0e151e; --panel: #152030; --ink: #e5ecf3; --muted: #93a3b6; --line: #2b394b;
+  --accent: #f0904a; --accent-soft: #3a2616; --cloud: #73a9e6; --cloud-soft: #172a40;
+  --ok: #57c48a; --ok-soft: #14301f; --bad: #ef6b5f; --bad-soft: #3a1a17;
+  --console: #070c12; --console-ink: #d7e2ee; --console-dim: #7f91a6;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 48px;
+}
+.wrap { max-width: 1080px; margin: 0 auto; display: grid; gap: 64px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h2 { font-size: clamp(1.6rem, 3.2vw, 2.2rem); font-weight: 800; }
+h3 { font-size: 1.1rem; font-weight: 700; }
+p { margin: 0; }
+a { color: var(--cloud); }
+code, .mono { font-family: var(--font-mono); font-size: 0.86em; }
+.eyebrow { font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }
+.lede { color: var(--muted); max-width: 62ch; }
+section { display: grid; gap: 20px; }
+.section-head { display: grid; gap: 8px; }
+
+/* Hero */
+.hero { padding-top: 48px; display: grid; gap: 20px; }
+.hero h1 { font-size: clamp(2.3rem, 6vw, 4rem); font-weight: 800; line-height: 1.02; max-width: 16ch; }
+.hero h1 em { font-style: normal; color: var(--accent); }
+.hero .lede { font-size: 1.12rem; }
+.facts { display: flex; flex-wrap: wrap; gap: 8px; }
+.fact { font-family: var(--font-mono); font-size: 0.8rem; padding: 6px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); white-space: nowrap; }
+.fact b { color: var(--accent); font-weight: 600; }
+
+/* Machine */
+.machine { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 16px; align-items: stretch; }
+@media (max-width: 880px) { .machine { grid-template-columns: minmax(0, 1fr); } }
+.diagram-box { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px; overflow-x: auto; min-width: 0; }
+.diagram-box svg { display: block; width: 100%; min-width: 560px; height: auto; }
+.controls { display: flex; flex-wrap: wrap; gap: 8px; }
+.run {
+  font-family: var(--font-body); font-weight: 700; font-size: 0.95rem;
+  padding: 10px 14px; border-radius: 8px; border: 1px solid var(--line);
+  background: var(--panel); color: var(--ink); cursor: pointer; display: inline-flex; gap: 8px; align-items: center;
+}
+.run:hover { border-color: var(--accent); }
+.run:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.run[aria-pressed="true"] { background: var(--accent); color: #fff; border-color: var(--accent); }
+.run:disabled { opacity: 0.5; cursor: not-allowed; }
+.run .k { font-family: var(--font-mono); font-size: 0.75rem; opacity: 0.8; }
+.console {
+  background: var(--console); color: var(--console-ink); border-radius: 10px; padding: 14px;
+  font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.6; min-width: 0;
+  display: flex; flex-direction: column; gap: 8px; min-height: 340px;
+}
+.console-top { display: flex; justify-content: space-between; gap: 8px; color: var(--console-dim); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; }
+.log { flex: 1; overflow-y: auto; max-height: 420px; white-space: pre-wrap; word-break: break-word; }
+.log .cmd { color: #f2b27c; }
+.log .ok { color: #7ad7a3; }
+.log .bad { color: #ff8f84; }
+.log .dim { color: var(--console-dim); }
+.note { font-size: 0.85rem; color: var(--muted); }
+
+/* SVG node styling */
+.node rect { fill: var(--panel); stroke: var(--line); stroke-width: 1.25; transition: fill .35s, stroke .35s, opacity .35s; }
+.node text { fill: var(--ink); font-family: var(--font-body); font-size: 12.5px; transition: opacity .35s; }
+.node .t { font-weight: 700; font-size: 13.5px; }
+.node .s { fill: var(--muted); font-size: 11.5px; }
+.node.aws rect { fill: var(--cloud-soft); stroke: var(--cloud); }
+.node.off rect { opacity: 0.25; }
+.node.off text { opacity: 0.3; }
+.node.active rect { stroke: var(--accent); stroke-width: 2.5; fill: var(--accent-soft); }
+.node.good rect { stroke: var(--ok); stroke-width: 2.5; fill: var(--ok-soft); }
+.node.blocked rect { stroke: var(--bad); stroke-width: 2.5; fill: var(--bad-soft); }
+.zone { fill: none; stroke: var(--line); stroke-width: 1.25; }
+.zone.region { stroke: var(--cloud); stroke-dasharray: 6 5; }
+.zone-label { fill: var(--muted); font-family: var(--font-mono); font-size: 11px; letter-spacing: .06em; }
+.wire { fill: none; stroke: var(--line); stroke-width: 1.5; stroke-dasharray: 3 4; }
+.packet { fill: var(--accent); }
+.packet.bad { fill: var(--bad); }
+.packet.good { fill: var(--ok); }
+
+/* Timeline */
+.timeline { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.day { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 16px; padding: 16px 0; border-top: 1px solid var(--line); }
+.day:last-child { border-bottom: 1px solid var(--line); }
+.day-n { font-family: var(--font-display); font-weight: 800; font-size: 1.05rem; color: var(--accent); }
+.day-n small { display: block; font-family: var(--font-mono); font-weight: 400; font-size: 0.7rem; color: var(--muted); letter-spacing: .05em; }
+.day-body { display: grid; gap: 6px; min-width: 0; }
+.day-body p { color: var(--muted); max-width: 70ch; }
+.proof { font-family: var(--font-mono); font-size: 0.78rem; color: var(--ok); }
+@media (max-width: 520px) { .day { grid-template-columns: minmax(0, 1fr); gap: 4px; } }
+
+/* Grids */
+.grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.card .sym { font-family: var(--font-mono); font-size: 0.78rem; color: var(--bad); word-break: break-word; }
+.card .fix { font-size: 0.92rem; }
+.card .lesson { font-size: 0.85rem; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 8px; }
+
+.layers { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 0 24px; }
+.layers li { display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 10px; padding: 12px 0; border-top: 1px solid var(--line); }
+.layers .i { font-family: var(--font-mono); font-size: 0.72rem; color: var(--ok); padding-top: 3px; }
+.layers b { display: block; }
+.layers span { color: var(--muted); font-size: 0.92rem; }
+
+.ladder { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--panel); }
+.rung { padding: 16px; display: grid; gap: 6px; border-right: 1px solid var(--line); align-content: start; }
+.rung:last-child { border-right: 0; }
+.rung.now { background: var(--accent-soft); }
+.rung .lvl { font-family: var(--font-mono); font-size: 0.72rem; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; }
+.rung p { font-size: 0.9rem; color: var(--muted); }
+@media (max-width: 640px) { .rung { border-right: 0; border-bottom: 1px solid var(--line); } .rung:last-child { border-bottom: 0; } }
+
+footer { color: var(--muted); font-size: 0.88rem; display: grid; gap: 6px; border-top: 1px solid var(--line); padding-top: 20px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .node rect, .node text { transition: none; }
+}
+</style>
+
+<div class="wrap">
+
+  <header class="hero">
+    <div class="eyebrow">Terraform · AWS · Ansible · ca-central-1</div>
+    <h1>A locked-down home for <em>FreshTrack</em>, built entirely from code</h1>
+    <p class="lede">I'm Samson, a DevOps Engineer. Over eight build days I wrote Terraform that creates a small AWS platform in Canada for FreshTrack, my household food-expiry app. One command builds it, Ansible configures the server through AWS Systems Manager with no SSH, and one command removes it so it costs nothing between sessions.</p>
+    <div class="facts" aria-label="Key facts">
+      <span class="fact"><b>26</b> resources from code</span>
+      <span class="fact"><b>0</b> open SSH ports</span>
+      <span class="fact">state in <b>S3</b> with locking</span>
+      <span class="fact"><b>13</b> pull requests, SonarCloud-scanned</span>
+      <span class="fact">IAM host role: <b>SSM only</b></span>
+      <span class="fact">destroyed after every session</span>
+    </div>
+  </header>
+
+  <section aria-labelledby="machine-h">
+    <div class="section-head">
+      <div class="eyebrow">The machine, running</div>
+      <h2 id="machine-h">Press a button and watch the parts work</h2>
+      <p class="lede">Each run replays real commands and results from my build log, with IP addresses and account IDs removed. Orange dots are requests moving between parts; green means allowed, red means blocked.</p>
+    </div>
+
+    <div class="controls" role="group" aria-label="Choose a run">
+      <button class="run" id="run-build" type="button" aria-pressed="false">Build it <span class="k">terraform apply</span></button>
+      <button class="run" id="run-config" type="button" aria-pressed="false">Configure it <span class="k">ansible over SSM</span></button>
+      <button class="run" id="run-visit" type="button" aria-pressed="false">Knock on the door <span class="k">curl</span></button>
+      <button class="run" id="run-destroy" type="button" aria-pressed="false">Tear it down <span class="k">terraform destroy</span></button>
+    </div>
+
+    <div class="machine">
+      <div class="diagram-box">
+        <svg id="diagram" viewBox="0 0 900 540" role="img" aria-label="Diagram of the platform: my laptop and GitHub on the left; in AWS ca-central-1, a VPC with a public subnet holding the EC2 host behind a security group and internet gateway, plus S3 buckets for state and Ansible transfers and Systems Manager for admin access.">
+          <!-- zones -->
+          <rect class="zone region" x="222" y="14" width="666" height="516" rx="10"/>
+          <text class="zone-label" x="236" y="34">AWS · ca-central-1</text>
+          <rect class="zone" x="240" y="68" width="632" height="312" rx="8"/>
+          <text class="zone-label" x="254" y="88">VPC module · 10.0.0.0/16</text>
+
+          <!-- wires (drawn first, under the boxes) -->
+          <path class="wire" id="p-git" d="M105 156 V206"/>
+          <path class="wire" id="p-state" d="M190 120 H208 V442 H244"/>
+          <path class="wire" id="p-api" d="M190 74 H244"/>
+          <path class="wire" id="p-ssm" d="M190 140 H214 V508 H668 V482"/>
+          <path class="wire" id="p-ssm-ec2" d="M668 404 V392 H430 V338"/>
+          <path class="wire" id="p-mail" d="M190 140 H214 V508 H502 V482"/>
+          <path class="wire" id="p-mail-ec2" d="M502 404 V396 H390 V338"/>
+          <path class="wire" id="p-visit" d="M190 54 H230 V30 H560 V190 H534"/>
+          <path class="wire" id="p-door-ec2" d="M410 212 V228"/>
+          <path class="wire" id="p-stranger" d="M190 470 H204 V24 H574 V176 H534"/>
+
+          <!-- left column -->
+          <g class="node active" id="n-laptop">
+            <rect x="20" y="36" width="170" height="120" rx="8"/>
+            <text class="t" x="34" y="62">My laptop</text>
+            <text class="s" x="34" y="82">Terraform · Ansible · Git</text>
+            <text class="s" x="34" y="100">aws login (short-lived)</text>
+            <text class="s" x="34" y="118">my home IP (/32)</text>
+          </g>
+          <g class="node" id="n-github">
+            <rect x="20" y="206" width="170" height="90" rx="8"/>
+            <text class="t" x="34" y="232">GitHub</text>
+            <text class="s" x="34" y="252">branch → PR → review</text>
+            <text class="s" x="34" y="270">SonarCloud quality gate</text>
+          </g>
+          <g class="node" id="n-stranger">
+            <rect x="20" y="436" width="170" height="70" rx="8"/>
+            <text class="t" x="34" y="464">A stranger</text>
+            <text class="s" x="34" y="484">anywhere else online</text>
+          </g>
+
+          <!-- inside region, outside VPC -->
+          <g class="node aws" id="n-igw">
+            <rect x="490" y="46" width="160" height="38" rx="8"/>
+            <text class="t" x="504" y="70">Internet gateway</text>
+          </g>
+          <g class="node aws" id="n-state">
+            <rect x="244" y="404" width="168" height="78" rx="8"/>
+            <text class="t" x="258" y="428">S3 state vault</text>
+            <text class="s" x="258" y="446">versioned · encrypted</text>
+            <text class="s" x="258" y="464">lock file · never destroyed</text>
+          </g>
+          <g class="node aws" id="n-mail">
+            <rect x="428" y="404" width="148" height="78" rx="8"/>
+            <text class="t" x="442" y="428">S3 mailbox</text>
+            <text class="s" x="442" y="446">Ansible file transfer</text>
+            <text class="s" x="442" y="464">auto-empties in 1 day</text>
+          </g>
+          <g class="node aws" id="n-ssm">
+            <rect x="592" y="404" width="152" height="78" rx="8"/>
+            <text class="t" x="606" y="428">Systems Manager</text>
+            <text class="s" x="606" y="446">admin door, no SSH</text>
+            <text class="s" x="606" y="464">every session audited</text>
+          </g>
+
+          <!-- inside VPC -->
+          <g class="node aws" id="n-pubA">
+            <rect x="258" y="104" width="314" height="258" rx="8"/>
+            <text class="t" x="272" y="126">Public subnet A · 10.0.1.0/24</text>
+            <text class="s" x="272" y="144">route 0.0.0.0/0 → internet gateway</text>
+          </g>
+          <g class="node aws" id="n-sg">
+            <rect x="286" y="160" width="248" height="52" rx="8"/>
+            <text class="t" x="300" y="182">Security group (the door)</text>
+            <text class="s" x="300" y="200">in: 80/443 from my /32 only</text>
+          </g>
+          <g class="node aws" id="n-ec2">
+            <rect x="286" y="228" width="248" height="110" rx="8"/>
+            <text class="t" x="300" y="252">EC2 host + Elastic IP</text>
+            <text class="s" x="300" y="272">t3.small now · m7i-flex.large for k3s</text>
+            <text class="s" x="300" y="290">IMDSv2 · encrypted gp3, 30 GiB</text>
+            <text class="s" x="300" y="308">IAM role: SSM only</text>
+            <text class="s" x="300" y="326">next: k3s + FreshTrack</text>
+          </g>
+          <g class="node aws" id="n-pubB">
+            <rect x="588" y="104" width="270" height="104" rx="8"/>
+            <text class="t" x="602" y="126">Public subnet B · 10.0.2.0/24</text>
+            <text class="s" x="602" y="144">second Availability Zone</text>
+            <text class="s" x="602" y="162">spare for later scaling</text>
+          </g>
+          <g class="node aws" id="n-priv">
+            <rect x="588" y="224" width="270" height="138" rx="8"/>
+            <text class="t" x="602" y="246">Private subnets A and B</text>
+            <text class="s" x="602" y="264">10.0.11.0/24 · 10.0.12.0/24</text>
+            <text class="s" x="602" y="282">local route only, no NAT</text>
+            <text class="s" x="602" y="300">(skipped to save cost)</text>
+            <text class="s" x="602" y="318">reserved: e.g. a database</text>
+          </g>
+
+          <circle class="packet" id="packet" r="7" cx="-20" cy="-20"/>
+        </svg>
+      </div>
+
+      <div class="console" aria-live="polite">
+        <div class="console-top"><span id="console-title">console · idle</span><span id="console-state">ready</span></div>
+        <div class="log" id="log"><span class="dim"># Pick a run above to replay it.
+# The diagram shows the platform as built on Day 8:
+# VPC module, EC2 host, Elastic IP, security group,
+# S3 state vault, Ansible mailbox, Systems Manager.</span></div>
+      </div>
+    </div>
+    <p class="note">Replayed from my real runs. Timings are sped up and long outputs are shortened; resource names and counts are the real ones. The stranger's timeout is the expected result of the security group rule, shown for contrast.</p>
+  </section>
+
+  <section aria-labelledby="log-h">
+    <div class="section-head">
+      <div class="eyebrow">Build log</div>
+      <h2 id="log-h">Eight days, one layer at a time</h2>
+      <p class="lede">Every day ended the same way: predict the plan, apply, verify three ways (Terraform output, Terraform state, AWS CLI), open a pull request, then destroy.</p>
+    </div>
+    <ol class="timeline">
+      <li class="day"><div class="day-n">Day 1<small>foundation</small></div><div class="day-body"><h3>Project, provider, a VPC</h3><p>Pinned Terraform and the AWS provider, default tags on every resource, state kept out of Git, short-lived logins instead of permanent keys.</p><span class="proof">init → fmt → validate → plan → apply → verify</span></div></li>
+      <li class="day"><div class="day-n">Day 2<small>network</small></div><div class="day-body"><h3>Four subnets across two Availability Zones</h3><p>Asked AWS for the zone names instead of guessing (this region has no 1c). Fixed a 403 on git push by switching to SSH.</p><span class="proof">public 10.0.1/2 · private 10.0.11/12</span></div></li>
+      <li class="day"><div class="day-n">Day 3<small>routing</small></div><div class="day-body"><h3>Internet gateway and route tables</h3><p>Public subnets get a road to the internet; private subnets only route inside the VPC. NAT deferred to save cost.</p><span class="proof">7 resources, plan matched prediction</span></div></li>
+      <li class="day"><div class="day-n">Day 4<small>first server</small></div><div class="day-body"><h3>EC2 host behind a security group</h3><p>First server fully from code. Reviewed SonarCloud's public-IP finding and accepted it with a written reason.</p><span class="proof">web page served, then destroyed</span></div></li>
+      <li class="day"><div class="day-n">Day 5<small>hardening</small></div><div class="day-body"><h3>No SSH, protected metadata, encrypted disk</h3><p>IAM role with only the Systems Manager policy, IMDSv2 required, encrypted gp3 root volume.</p><span class="proof">SSM login as ssm-user · IMDS 401 without token · Encrypted: True</span></div></li>
+      <li class="day"><div class="day-n">Day 6<small>state</small></div><div class="day-body"><h3>Remote state in S3 with locking</h3><p>A separate bootstrap project builds a versioned, encrypted, HTTPS-only bucket that is never destroyed. State migrated off my laptop.</p><span class="proof">second run refused: state lock · HTTP request: AccessDenied</span></div></li>
+      <li class="day"><div class="day-n">Modules<small>refactor</small></div><div class="day-body"><h3>A reusable VPC module</h3><p>Subnet ranges computed with cidrsubnet(), names prefixed by project and environment, input validation, provider requirements declared. Review caught an empty versions.tf that validate missed.</p><span class="proof">vpc_cidr=banana → my own error message</span></div></li>
+      <li class="day"><div class="day-n">Day 7<small>FreshTrack host</small></div><div class="day-body"><h3>Right-sized, locked door, fixed address</h3><p>Instance type and disk as variables, ports 80/443 open to my IP only (kept out of the public repo), an Elastic IP, old nginx setup removed.</p><span class="proof">1.9 GiB RAM · 30 GiB disk · curl from my IP: refused (door open, no app yet)</span></div></li>
+      <li class="day"><div class="day-n">Day 8<small>configuration</small></div><div class="day-body"><h3>Ansible through Systems Manager</h3><p>Learned Ansible on my laptop first, then ran the same playbooks on the EC2 host through SSM with an S3 transfer bucket. Proved the host needs no S3 permission.</p><span class="proof">first run changed=2 · second run changed=0</span></div></li>
+    </ol>
+  </section>
+
+  <section aria-labelledby="sec-h">
+    <div class="section-head">
+      <div class="eyebrow">Security</div>
+      <h2 id="sec-h">Defence in layers</h2>
+    </div>
+    <ul class="layers">
+      <li><span class="i">01</span><div><b>No SSH, no keys</b><span>Port 22 stays closed. Admin access and Ansible both go through Systems Manager, and sessions are audited.</span></div></li>
+      <li><span class="i">02</span><div><b>A door for one address</b><span>Ports 80 and 443 accept only my /32 until FreshTrack has HTTPS and basic auth. The IP lives in a git-ignored tfvars file.</span></div></li>
+      <li><span class="i">03</span><div><b>Least privilege, tested</b><span>The host's IAM role has only the SSM policy. I tested Ansible without S3 rights first; it worked through pre-signed links, so none were added.</span></div></li>
+      <li><span class="i">04</span><div><b>Protected metadata</b><span>IMDSv2 required with hop limit 1, so stolen-credential tricks through the metadata service fail.</span></div></li>
+      <li><span class="i">05</span><div><b>Encrypted everywhere</b><span>gp3 root disk, both S3 buckets, and HTTPS-only bucket policies (an explicit deny beats any allow).</span></div></li>
+      <li><span class="i">06</span><div><b>Reviewed changes</b><span>Every change goes branch → pull request → SonarCloud. Findings are fixed or accepted with a written reason.</span></div></li>
+    </ul>
+  </section>
+
+  <section aria-labelledby="fix-h">
+    <div class="section-head">
+      <div class="eyebrow">Troubleshooting</div>
+      <h2 id="fix-h">Problems I hit and how I solved them</h2>
+    </div>
+    <div class="grid-3">
+      <div class="card"><div class="sym">Error acquiring the state lock</div><p class="fix">An interrupted run had left the lock behind. I checked for running Terraform processes and the S3 lock file before forcing anything; it had already been released.</p><p class="lesson">Never force-unlock an apply that might still be running.</p></div>
+      <div class="card"><div class="sym">Missing Dependency: botocore[crt]</div><p class="fix">My short-lived AWS login uses a newer credential type. Added the CRT extra to Ansible's own Python environment.</p><p class="lesson">The error message usually names the fix.</p></div>
+      <div class="card"><div class="sym">apt: No such file or directory</div><p class="fix">The server runs Amazon Linux, which uses dnf. Switched to Ansible's generic package module so one playbook works on Ubuntu and Amazon Linux.</p><p class="lesson">Write portable playbooks; don't assume the OS.</p></div>
+      <div class="card"><div class="sym">Plan said "3 to add", expected 19</div><p class="fix">Listed what would be created instead of trusting the summary: 19 resources. The 3 came from an older run still on screen.</p><p class="lesson">Question any count you didn't predict.</p></div>
+      <div class="card"><div class="sym">versions.tf committed empty</div><p class="fix">terraform validate passed because an empty file is valid. Caught it reviewing the pull request diff and pushed the fix.</p><p class="lesson">Valid doesn't mean correct.</p></div>
+      <div class="card"><div class="sym">git push → 403</div><p class="fix">The remote used HTTPS with an old token. Switched the remote to SSH.</p><p class="lesson">403 is about who you are; 404 is about what you asked for.</p></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="cost-h">
+    <div class="section-head">
+      <div class="eyebrow">Cost</div>
+      <h2 id="cost-h">Paying only while it runs</h2>
+      <p class="lede">The stack is destroyed after every session, so idle cost is close to zero. The Elastic IP is released with it, and the domain name will be the stable address. A small t3.small is used while learning; the 8 GB m7i-flex.large is chosen with one flag only when k3s needs it. No NAT gateway and no load balancer until the scaling ladder calls for them.</p>
+    </div>
+    <div class="ladder" aria-label="Scaling ladder">
+      <div class="rung now"><span class="lvl">Stage 1 · now</span><h3>One household</h3><p>One EC2 host, single-node k3s, Traefik ingress, Elastic IP.</p></div>
+      <div class="rung"><span class="lvl">Stage 2</span><h3>A few households</h3><p>Bigger instance, two copies of web and api, a pod autoscaler.</p></div>
+      <div class="rung"><span class="lvl">Stage 3</span><h3>Real users</h3><p>Database moves to RDS, worker nodes in an Auto Scaling group, a load balancer.</p></div>
+      <div class="rung"><span class="lvl">Stage 4</span><h3>Production scale</h3><p>EKS with managed node autoscaling.</p></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="next-h">
+    <div class="section-head">
+      <div class="eyebrow">What's next</div>
+      <h2 id="next-h">From platform to a live household trial</h2>
+    </div>
+    <div class="grid-3">
+      <div class="card"><h3>Day 9 · k3s</h3><p class="fix">Ansible installs k3s on the 8 GB host. kubectl reaches it through SSM port forwarding, with 6443 kept closed. Guards: an auto-stop Lambda on a schedule, alerts, a budget.</p></div>
+      <div class="card"><h3>Day 10 · Terraform CI</h3><p class="fix">GitHub Actions runs fmt, validate and lint on every pull request, with Infracost showing the monthly cost change before anything is applied.</p></div>
+      <div class="card"><h3>Go-live · FreshTrack</h3><p class="fix">Argo CD deploys FreshTrack with Helm, secrets from OpenBao through External Secrets, HTTPS from cert-manager, basic auth. Then a one-week trial and a clean destroy.</p></div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Repository: <a href="https://github.com/samcloud-dev/terraform-aws-platform" target="_blank" rel="noopener">github.com/samcloud-dev/terraform-aws-platform</a></span>
+    <span>Built and documented by Samson Olajide, DevOps Engineer, Ottawa.</span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const logEl = document.getElementById('log');
+  const titleEl = document.getElementById('console-title');
+  const stateEl = document.getElementById('console-state');
+  const packet = document.getElementById('packet');
+  const buttons = {
+    build: document.getElementById('run-build'),
+    config: document.getElementById('run-config'),
+    visit: document.getElementById('run-visit'),
+    destroy: document.getElementById('run-destroy')
+  };
+  const awsNodes = ['n-igw', 'n-pubA', 'n-pubB', 'n-priv', 'n-sg', 'n-ec2', 'n-mail'];
+  let runId = 0;
+
+  const $ = (id) => document.getElementById(id);
+  const sleep = (ms) => new Promise((r) => setTimeout(r, reduce ? 0 : ms));
+
+  function clearMarks() {
+    document.querySelectorAll('.node').forEach((n) => n.classList.remove('active', 'good', 'blocked'));
+  }
+  function mark(id, cls) { const n = $(id); if (n) n.classList.add(cls); }
+  function unmark(id, cls) { const n = $(id); if (n) n.classList.remove(cls); }
+  function setOff(ids, off) { ids.forEach((id) => $(id).classList.toggle('off', off)); }
+
+  function line(text, cls) {
+    const span = document.createElement('span');
+    if (cls) span.className = cls;
+    span.textContent = text + '\n';
+    logEl.appendChild(span);
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  function travel(pathId, ms, tone) {
+    return new Promise((resolve) => {
+      const path = $(pathId);
+      const len = path.getTotalLength();
+      packet.setAttribute('class', 'packet' + (tone ? ' ' + tone : ''));
+      if (reduce) {
+        const end = path.getPointAtLength(len);
+        packet.setAttribute('cx', end.x); packet.setAttribute('cy', end.y);
+        resolve(); return;
+      }
+      const start = performance.now();
+      function step(now) {
+        const t = Math.min(1, (now - start) / ms);
+        const p = path.getPointAtLength(len * t);
+        packet.setAttribute('cx', p.x); packet.setAttribute('cy', p.y);
+        if (t < 1) requestAnimationFrame(step); else resolve();
+      }
+      requestAnimationFrame(step);
+    });
+  }
+  function hidePacket() { packet.setAttribute('cx', -20); packet.setAttribute('cy', -20); }
+
+  function begin(name, title) {
+    runId += 1;
+    Object.entries(buttons).forEach(([k, b]) => b.setAttribute('aria-pressed', k === name ? 'true' : 'false'));
+    logEl.textContent = '';
+    titleEl.textContent = 'console · ' + title;
+    stateEl.textContent = 'running';
+    clearMarks();
+    hidePacket();
+    return runId;
+  }
+  function finish(id, label) {
+    if (id !== runId) return;
+    stateEl.textContent = label || 'done';
+    hidePacket();
+  }
+  const alive = (id) => id === runId;
+
+  async function runBuild() {
+    const id = begin('build', 'terraform apply');
+    setOff(awsNodes, true);
+    mark('n-laptop', 'active');
+    line('$ git switch -c feature/day8-ansible-ssm-bucket', 'cmd');
+    await sleep(500); if (!alive(id)) return;
+    await travel('p-git', 700); mark('n-github', 'active');
+    line('PR opened · SonarCloud scans every pull request', 'ok');
+    await sleep(500); if (!alive(id)) return;
+    line('$ terraform plan', 'cmd');
+    await travel('p-state', 900); mark('n-state', 'active');
+    line('Acquiring state lock (S3 lockfile)...', 'dim');
+    await sleep(500); if (!alive(id)) return;
+    line('Plan: 26 to add, 0 to change, 0 to destroy.');
+    line('# predicted 26: 21 from Day 7 + 5 new bucket resources', 'dim');
+    await sleep(700); if (!alive(id)) return;
+    line('$ terraform apply', 'cmd');
+    await travel('p-api', 400);
+    const order = [
+      ['n-igw', 'module.vpc.aws_internet_gateway.main: Creation complete'],
+      ['n-pubA', 'module.vpc.aws_subnet.public_a: Creation complete'],
+      ['n-pubB', 'module.vpc.aws_subnet.public_b: Creation complete'],
+      ['n-priv', 'module.vpc.aws_subnet.private_a/b: Creation complete'],
+      ['n-sg', 'aws_security_group.web + 3 rules: Creation complete'],
+      ['n-ec2', 'aws_instance.web + aws_eip.web: Creation complete'],
+      ['n-mail', 'aws_s3_bucket.ansible_transfer + 4 settings: Creation complete']
+    ];
+    for (const [node, text] of order) {
+      if (!alive(id)) return;
+      $(node).classList.remove('off'); mark(node, 'active');
+      line(text);
+      await sleep(420);
+      unmark(node, 'active');
+    }
+    if (!alive(id)) return;
+    line('Apply complete! Resources: 26 added, 0 changed, 0 destroyed.', 'ok');
+    line('Releasing state lock...', 'dim');
+    unmark('n-state', 'active');
+    await sleep(600); if (!alive(id)) return;
+    line('$ terraform plan', 'cmd');
+    await sleep(400); if (!alive(id)) return;
+    line('No changes. Your infrastructure matches the configuration.', 'ok');
+    awsNodes.forEach((n) => mark(n, 'good'));
+    finish(id, 'built · idempotent');
+  }
+
+  async function runConfig() {
+    const id = begin('config', 'ansible over SSM');
+    setOff(awsNodes, false);
+    mark('n-laptop', 'active');
+    line('$ ansible -i aws_inventory.ini freshtrack -m ping', 'cmd');
+    line('# connection: amazon.aws.aws_ssm · region ca-central-1 · no SSH', 'dim');
+    await travel('p-ssm', 1100); if (!alive(id)) return;
+    mark('n-ssm', 'active');
+    await travel('p-ssm-ec2', 600); if (!alive(id)) return;
+    mark('n-ec2', 'good');
+    line('freshtrack-host | SUCCESS => "ping": "pong"', 'ok');
+    await sleep(700); if (!alive(id)) return;
+    unmark('n-ec2', 'good');
+    line('$ ansible-playbook -i aws_inventory.ini first-playbook.yml', 'cmd');
+    await travel('p-mail', 1000); if (!alive(id)) return;
+    mark('n-mail', 'active');
+    line('# module code dropped in the S3 mailbox (pre-signed link)', 'dim');
+    await travel('p-mail-ec2', 600); if (!alive(id)) return;
+    mark('n-ec2', 'active');
+    line('TASK [Make sure the notes folder exists] ... changed');
+    await sleep(350); if (!alive(id)) return;
+    line('TASK [Make sure the welcome note exists] ... changed');
+    line('PLAY RECAP  ok=3  changed=2  failed=0', 'ok');
+    await sleep(900); if (!alive(id)) return;
+    line('$ ansible-playbook -i aws_inventory.ini first-playbook.yml', 'cmd');
+    await travel('p-mail-ec2', 500); if (!alive(id)) return;
+    line('TASK [Make sure the notes folder exists] ... ok');
+    line('TASK [Make sure the welcome note exists] ... ok');
+    line('PLAY RECAP  ok=3  changed=0  failed=0', 'ok');
+    line('# idempotent: nothing to change on the second run', 'dim');
+    unmark('n-ec2', 'active'); mark('n-ec2', 'good');
+    unmark('n-mail', 'active');
+    line('# host IAM role: SSM only. No S3 permission needed.', 'dim');
+    finish(id, 'configured · no SSH');
+  }
+
+  async function runVisit() {
+    const id = begin('visit', 'curl');
+    setOff(awsNodes, false);
+    mark('n-laptop', 'active');
+    line('$ curl -m 5 http://<elastic-ip>', 'cmd');
+    line('# from my home IP, the one /32 the door allows', 'dim');
+    await travel('p-visit', 1300, 'good'); if (!alive(id)) return;
+    mark('n-igw', 'good'); mark('n-sg', 'good');
+    await travel('p-door-ec2', 300, 'good'); if (!alive(id)) return;
+    mark('n-ec2', 'active');
+    line('curl: (7) Failed to connect: Connection refused', 'ok');
+    line('# refused = the door opened, but no app is listening yet (k3s comes Day 9)', 'dim');
+    await sleep(1100); if (!alive(id)) return;
+    unmark('n-laptop', 'active'); mark('n-stranger', 'active');
+    line('# what a stranger sees (expected by design, not from my log):', 'dim');
+    line('$ curl -m 5 http://<elastic-ip>', 'cmd');
+    unmark('n-sg', 'good');
+    await travel('p-stranger', 1300, 'bad'); if (!alive(id)) return;
+    mark('n-sg', 'blocked'); unmark('n-stranger', 'active'); mark('n-stranger', 'blocked');
+    line('curl: (28) Connection timed out after 5000 ms', 'bad');
+    line('# timeout = the security group never opened the door', 'dim');
+    finish(id, 'door works');
+  }
+
+  async function runDestroy() {
+    const id = begin('destroy', 'terraform destroy');
+    setOff(awsNodes, false);
+    mark('n-laptop', 'active');
+    line('$ terraform destroy', 'cmd');
+    await travel('p-state', 900); if (!alive(id)) return;
+    mark('n-state', 'active');
+    line('Acquiring state lock (S3 lockfile)...', 'dim');
+    line('Plan: 0 to add, 0 to change, 26 to destroy.');
+    await sleep(600); if (!alive(id)) return;
+    const order = [
+      ['n-mail', 'aws_s3_bucket.ansible_transfer: Destruction complete (force_destroy)'],
+      ['n-ec2', 'aws_eip.web + aws_instance.web: Destruction complete'],
+      ['n-sg', 'aws_security_group.web: Destruction complete'],
+      ['n-priv', 'module.vpc.aws_subnet.private_a/b: Destruction complete'],
+      ['n-pubB', 'module.vpc.aws_subnet.public_b: Destruction complete'],
+      ['n-pubA', 'module.vpc.aws_subnet.public_a: Destruction complete'],
+      ['n-igw', 'module.vpc.aws_internet_gateway.main: Destruction complete']
+    ];
+    for (const [node, text] of order) {
+      if (!alive(id)) return;
+      $(node).classList.add('off');
+      line(text);
+      await sleep(380);
+    }
+    if (!alive(id)) return;
+    line('Destroy complete! Resources: 26 destroyed.', 'ok');
+    unmark('n-state', 'active'); mark('n-state', 'good');
+    await sleep(500); if (!alive(id)) return;
+    line('$ terraform state list', 'cmd');
+    line('(empty)', 'dim');
+    line('$ aws ec2 describe-addresses --query "Addresses[].PublicIp"', 'cmd');
+    line('(empty) · Elastic IP released, no idle charge', 'dim');
+    line('# the S3 state vault stays: prevent_destroy, ready for the next apply', 'dim');
+    finish(id, 'down · $0 idle');
+  }
+
+  buttons.build.addEventListener('click', runBuild);
+  buttons.config.addEventListener('click', runConfig);
+  buttons.visit.addEventListener('click', runVisit);
+  buttons.destroy.addEventListener('click', runDestroy);
+})();
+</script>
