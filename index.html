@@ -49,13 +49,13 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">Ottawa, Ontario · Available for junior roles & freelance projects</div>
+  <div class="eyebrow">Ottawa, Ontario · Available for Cloud / DevOps / Senior roles & freelance projects</div>
   <h1>Samson Olajide</h1>
   <div class="role">DevOps / Platform / Cloud Engineer</div>
   <p class="lede">I build and run containerized applications, CI/CD pipelines and cloud infrastructure —
   Kubernetes, Terraform and AWS. Internship experience includes securing a 15-service Kubernetes
   staging environment with NetworkPolicies, deploying applications with Docker, HashiCorp Vault and
-  Forgejo CI/CD, and on-call monitoring with Prometheus and Grafana. I bring 19 years of
+  Forgejo CI/CD, and on-call monitoring with Prometheus and Grafana. I bring 16 years of
   quality-assurance discipline — verification, root-cause analysis and audit rigour — into DevOps practice.</p>
   <div class="cta">
     <a class="btn btn-primary" href="mailto:samsonayowole009@gmail.com">Email me</a>
@@ -90,28 +90,18 @@
         <span class="status done">Live — build story</span>
       <h3><a href="/terraform-aws-platform/">FreshTrack AWS Platform — the build story</a></h3>
       <p>The platform build told end to end, with a running diagram and replays of the real commands:
-      eight build days from VPC and subnets to Ansible configuration over AWS Systems Manager —
-      no SSH, least-privilege IAM, remote state in S3, and the whole stack destroyed after every
-      session so it costs nothing while idle.</p>
+      nine build days from VPC and subnets to Ansible installing k3s over AWS Systems Manager —
+      no SSH, least-privilege IAM, remote state in S3, Traefik ingress ready for FreshTrack,
+      and the whole stack destroyed after every session so it costs nothing while idle.</p>
       <span class="tag">Terraform</span><span class="tag">AWS</span><span class="tag">Ansible</span><span class="tag">Systems Manager</span>
     </div>
-      <div class="card">
-      <span class="status done">Bootcamp build — submitted</span>
-      <h3>AWS Self-Healing Web Tier — ALB + Auto Scaling</h3>
-      <p>A self-healing web tier built in AWS: Launch Template (Amazon Linux 2023, IMDSv2, Bash
-      user-data running Apache with a /health endpoint), a target group health-checking /health, an
-      internet-facing Application Load Balancer, and an Auto Scaling Group (1–3 instances) — proved
-      by marking an instance unhealthy and watching the ASG replace it, then torn down completely.</p>
-      <span class="tag">AWS</span><span class="tag">ALB</span><span class="tag">Auto Scaling</span><span class="tag">EC2</span>
-    </div>
-
     <div class="card">
       <span class="status prog">In progress</span>
       <h3><a href="https://github.com/samcloud-dev/freshtrack" target="_blank" rel="noopener">FreshTrack</a></h3>
       <p>A household food expiry tracker (Flask API) with a hardened Docker image — digest-pinned base,
       non-root user, hash-locked dependencies — and a CI pipeline that builds, boots, health-checks and
       Trivy-scans the image. Latest verified run: green, 0 vulnerabilities. Image published to
-      Docker Hub; deployment onto the Terraform platform is next.</p>
+      Docker Hub; hosting on the platform's new k3s cluster comes next.</p>
       <span class="tag">Docker</span><span class="tag">GitHub Actions</span><span class="tag">Trivy</span><span class="tag">Python</span>
     </div>
 
