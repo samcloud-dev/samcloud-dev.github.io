@@ -166,7 +166,7 @@ footer { color: var(--muted); font-size: 0.88rem; display: grid; gap: 6px; borde
   <header class="hero">
     <div class="eyebrow">Terraform · AWS · Ansible · ca-central-1</div>
     <h1>A locked-down home for <em>FreshTrack</em>, built entirely from code</h1>
-    <p class="lede">I'm Samson, a DevOps Engineer. Over eight build days I wrote Terraform that creates a small AWS platform in Canada for FreshTrack, my household food-expiry app. One command builds it, Ansible configures the server through AWS Systems Manager with no SSH, and one command removes it so it costs nothing between sessions.</p>
+    <p class="lede">I'm Samson, a DevOps Engineer. Over nine build days I wrote Terraform that creates a small AWS platform in Canada for FreshTrack, my household food-expiry app. One command builds it, Ansible configures the server through AWS Systems Manager with no SSH and installs single-node k3s with Traefik ingress, and one command removes it so it costs nothing between sessions.</p>
     <div class="facts" aria-label="Key facts">
       <span class="fact"><b>26</b> resources from code</span>
       <span class="fact"><b>0</b> open SSH ports</span>
@@ -270,10 +270,10 @@ footer { color: var(--muted); font-size: 0.88rem; display: grid; gap: 6px; borde
           <g class="node aws" id="n-ec2">
             <rect x="286" y="228" width="248" height="110" rx="8"/>
             <text class="t" x="300" y="252">EC2 host + Elastic IP</text>
-            <text class="s" x="300" y="272">t3.small now · m7i-flex.large for k3s</text>
+            <text class="s" x="300" y="272">m7i-flex.large · 8 GB · k3s host</text>
             <text class="s" x="300" y="290">IMDSv2 · encrypted gp3, 30 GiB</text>
             <text class="s" x="300" y="308">IAM role: SSM only</text>
-            <text class="s" x="300" y="326">next: k3s + FreshTrack</text>
+            <text class="s" x="300" y="326">k3s live · next: FreshTrack</text>
           </g>
           <g class="node aws" id="n-pubB">
             <rect x="588" y="104" width="270" height="104" rx="8"/>
@@ -297,7 +297,7 @@ footer { color: var(--muted); font-size: 0.88rem; display: grid; gap: 6px; borde
       <div class="console" aria-live="polite">
         <div class="console-top"><span id="console-title">console · idle</span><span id="console-state">ready</span></div>
         <div class="log" id="log"><span class="dim"># Pick a run above to replay it.
-# The diagram shows the platform as built on Day 8:
+# The diagram shows the platform as built on Day 9:
 # VPC module, EC2 host, Elastic IP, security group,
 # S3 state vault, Ansible mailbox, Systems Manager.</span></div>
       </div>
@@ -308,7 +308,7 @@ footer { color: var(--muted); font-size: 0.88rem; display: grid; gap: 6px; borde
   <section aria-labelledby="log-h">
     <div class="section-head">
       <div class="eyebrow">Build log</div>
-      <h2 id="log-h">Eight days, one layer at a time</h2>
+      <h2 id="log-h">Nine days, one layer at a time</h2>
       <p class="lede">Every day ended the same way: predict the plan, apply, verify three ways (Terraform output, Terraform state, AWS CLI), open a pull request, then destroy.</p>
     </div>
     <ol class="timeline">
@@ -321,6 +321,7 @@ footer { color: var(--muted); font-size: 0.88rem; display: grid; gap: 6px; borde
       <li class="day"><div class="day-n">Modules<small>refactor</small></div><div class="day-body"><h3>A reusable VPC module</h3><p>Subnet ranges computed with cidrsubnet(), names prefixed by project and environment, input validation, provider requirements declared. Review caught an empty versions.tf that validate missed.</p><span class="proof">vpc_cidr=banana → my own error message</span></div></li>
       <li class="day"><div class="day-n">Day 7<small>FreshTrack host</small></div><div class="day-body"><h3>Right-sized, locked door, fixed address</h3><p>Instance type and disk as variables, ports 80/443 open to my IP only (kept out of the public repo), an Elastic IP, old nginx setup removed.</p><span class="proof">1.9 GiB RAM · 30 GiB disk · curl from my IP: refused (door open, no app yet)</span></div></li>
       <li class="day"><div class="day-n">Day 8<small>configuration</small></div><div class="day-body"><h3>Ansible through Systems Manager</h3><p>Learned Ansible on my laptop first, then ran the same playbooks on the EC2 host through SSM with an S3 transfer bucket. Proved the host needs no S3 permission.</p><span class="proof">first run changed=2 · second run changed=0</span></div></li>
+      <li class="day"><div class="day-n">Day 9<small>kubernetes</small></div><div class="day-body"><h3>Ansible installs k3s</h3><p>Moved Ansible into the repo with a dynamic inventory that finds the server by its tags, so a rebuilt server needs no edits. A playbook installs single-node k3s on the 8 GB host and waits until the node is Ready. Traefik comes pre-installed with k3s as the ingress, ready to host FreshTrack.</p><span class="proof">node Ready (v1.37.2+k3s1) · 856 Mi of 7.6 Gi used · CPU 1% · second run changed=0</span></div></li>
     </ol>
   </section>
 
@@ -343,7 +344,7 @@ footer { color: var(--muted); font-size: 0.88rem; display: grid; gap: 6px; borde
     <div class="section-head">
       <div class="eyebrow">Cost</div>
       <h2 id="cost-h">Paying only while it runs</h2>
-      <p class="lede">The stack is destroyed after every session, so idle cost is close to zero. The Elastic IP is released with it, and the domain name will be the stable address. A small t3.small is used while learning; the 8 GB m7i-flex.large is chosen with one flag only when k3s needs it. No NAT gateway and no load balancer until the scaling ladder calls for them.</p>
+      <p class="lede">The stack is destroyed after every session, so idle cost is close to zero. The Elastic IP is released with it, and the domain name will be the stable address. A small t3.small is used while learning; the 8 GB m7i-flex.large is chosen with one flag now that k3s runs on it. No NAT gateway and no load balancer until the scaling ladder calls for them.</p>
     </div>
     <div class="ladder" aria-label="Scaling ladder">
       <div class="rung now"><span class="lvl">Stage 1 · now</span><h3>One household</h3><p>One EC2 host, single-node k3s, Traefik ingress, Elastic IP.</p></div>
@@ -359,7 +360,7 @@ footer { color: var(--muted); font-size: 0.88rem; display: grid; gap: 6px; borde
       <h2 id="next-h">From platform to a live household trial</h2>
     </div>
     <div class="grid-3">
-      <div class="card"><h3>Day 9 · k3s</h3><p class="fix">Ansible installs k3s on the 8 GB host. kubectl reaches it through SSM port forwarding, with 6443 kept closed. Guards: an auto-stop Lambda on a schedule, alerts, a budget.</p></div>
+      <div class="card"><h3>Day 9 · k3s — done</h3><p class="fix">Ansible installed single-node k3s on the 8 GB host over Systems Manager; the node is Ready and Traefik is pre-installed as ingress. kubectl reaches it through SSM port forwarding, with 6443 kept closed.</p></div>
       <div class="card"><h3>Day 10 · Terraform CI</h3><p class="fix">GitHub Actions runs fmt, validate and lint on every pull request, with Infracost showing the monthly cost change before anything is applied.</p></div>
       <div class="card"><h3>Go-live · FreshTrack</h3><p class="fix">Argo CD deploys FreshTrack with Helm, secrets from OpenBao through External Secrets, HTTPS from cert-manager, basic auth. Then a one-week trial and a clean destroy.</p></div>
     </div>
@@ -537,7 +538,7 @@ footer { color: var(--muted); font-size: 0.88rem; display: grid; gap: 6px; borde
     await travel('p-door-ec2', 300, 'good'); if (!alive(id)) return;
     mark('n-ec2', 'active');
     line('curl: (7) Failed to connect: Connection refused', 'ok');
-    line('# refused = the door opened, but no app is listening yet (k3s comes Day 9)', 'dim');
+    line('# refused = the door opened, but no app is listening yet (that was before Day 9 installed k3s)', 'dim');
     await sleep(1100); if (!alive(id)) return;
     unmark('n-laptop', 'active'); mark('n-stranger', 'active');
     line('# what a stranger sees (expected by design, not from my log):', 'dim');
